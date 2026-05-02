@@ -1,0 +1,35 @@
+# render.yaml - Render 部署設定檔
+# 使用方式：在 Render Dashboard 選擇「Blueprint」並連接此 repo
+
+services:
+  - type: web
+    name: line-reminder-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free                    # 免費方案（15 分鐘無流量會休眠）
+    healthCheckPath: /health      # Render 用來確認服務存活的端點
+
+    envVars:
+      # 這兩個需要在 Render Dashboard 手動填入
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false               # sync: false = 不從 render.yaml 讀，要手動填
+      - key: LINE_CHANNEL_SECRET
+        sync: false
+
+      # 資料庫 URL 由 Render PostgreSQL 服務自動注入
+      - key: DATABASE_URL
+        fromDatabase:
+          name: line-reminder-db
+          property: connectionString
+
+      - key: TIMEZONE
+        value: Asia/Taipei
+
+      - key: PYTHON_VERSION
+        value: "3.11"
+
+# 自動建立 PostgreSQL 資料庫（免費方案，90 天後需手動續約）
+databases:
+  - name: line-reminder-db
+    plan: free
